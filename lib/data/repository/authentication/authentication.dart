@@ -20,8 +20,8 @@ class KAuthenticationRepository extends AuthenticationRepository {
       if (session == null) {
         throw NoLoginAttemptException();
       }
-      return _dio.post('/authorize', data: {
-        'otp': otp,
+      return _dio.post('/auth/authorize', data: {
+        'token': otp,
         'phone': session.value,
       }).then((response) => _handleAuthorizationResponse(response));
     });
@@ -48,7 +48,7 @@ class KAuthenticationRepository extends AuthenticationRepository {
       if (phone == null) {
         throw NoLoginAttemptException();
       }
-      return _dio.post('/authenticate', data: {
+      return _dio.post('/auth/authenticate', data: {
         'username': phone.value,
         'password': password,
         'rememberMe': true,
@@ -80,7 +80,7 @@ class KAuthenticationRepository extends AuthenticationRepository {
           return lastLogInAttempt();
         }
       }
-      return _dio.post('/phone', data: {
+      return _dio.post('/auth/request-token', data: {
         'phone': number,
         'langKey': lang,
         'address': address,
@@ -110,4 +110,7 @@ class KAuthenticationRepository extends AuthenticationRepository {
       );
     });
   }
+
+  @override
+  Future<void> logout() => _sessionDao.clearUserSession();
 }

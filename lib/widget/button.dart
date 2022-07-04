@@ -10,6 +10,8 @@ const Duration kButtonAnimationDuration = Duration(milliseconds: 300);
 class Button extends ButtonStyleButton {
   final String label;
 
+  final double radius;
+
   final Color? primary;
 
   final Color? surface;
@@ -35,6 +37,7 @@ class Button extends ButtonStyleButton {
   Button(
     this.label, {
     Key? key,
+    this.radius = Dimens.buttonRadius,
     this.primary,
     this.surface,
     this.onPrimary,
@@ -60,8 +63,8 @@ class Button extends ButtonStyleButton {
           focusNode: focusNode,
           autofocus: autofocus,
           clipBehavior: clipBehavior,
-          onHover: (args) {},
-          onFocusChange: (args) {},
+          onHover: (state) {},
+          onFocusChange: (state) {},
           child: _ButtonWithProgressChild(
             label: label,
             spanWidth: spanWidth,
@@ -80,6 +83,8 @@ class Button extends ButtonStyleButton {
     final ThemeData theme = Theme.of(context);
     final buttonStyle =
         (outlined) ? OutlinedButton.styleFrom() : TextButton.styleFrom();
+
+    final MaterialStateProperty<Size?>? maxSize = _ButtonMaximumSize(context);
 
     final MaterialStateProperty<Color?>? backgroundColor =
         (onSurface == null && primary == null)
@@ -126,6 +131,7 @@ class Button extends ButtonStyleButton {
       foregroundColor:
           (outlined || ghost) ? foregroundColor : onForegroundColor,
       overlayColor: (outlined || ghost) ? overlayColor : onOverlayColor,
+      maximumSize: maxSize,
       backgroundColor: (outlined || ghost)
           ? MaterialStateProperty.resolveWith<Color>(
               (Set<MaterialState> states) {
@@ -161,9 +167,9 @@ class Button extends ButtonStyleButton {
       side: (outlined) ? borderSide : null,
       shape: MaterialStateProperty.resolveWith<OutlinedBorder?>(
         (Set<MaterialState> states) {
-          return const RoundedRectangleBorder(
+          return RoundedRectangleBorder(
               borderRadius: BorderRadius.all(
-            Radius.circular(Dimens.buttonRadius),
+            Radius.circular(radius),
           ));
         },
       ),
@@ -260,6 +266,19 @@ class _ButtonDefaultBackground extends MaterialStateProperty<Color?>
   }
 }
 
+@immutable
+class _ButtonMaximumSize extends MaterialStateProperty<Size?>
+    with Diagnosticable {
+  _ButtonMaximumSize(this.context);
+
+  final BuildContext context;
+
+  @override
+  Size? resolve(Set<MaterialState> states) {
+    return MediaQuery.of(context).size;
+  }
+}
+
 class _ButtonWithProgressChild extends StatelessWidget {
   final String label;
 
@@ -346,6 +365,8 @@ class _ButtonWithProgressChild extends StatelessWidget {
 class PrimaryButton extends StatelessWidget {
   final String label;
 
+  final double radius;
+
   final bool spanWidth;
 
   final bool showProgress;
@@ -363,6 +384,7 @@ class PrimaryButton extends StatelessWidget {
   PrimaryButton(
     this.label, {
     Key? key,
+    this.radius = Dimens.buttonRadius * 4,
     this.spanWidth = false,
     this.showProgress = false,
     this.outlined = false,
@@ -377,6 +399,7 @@ class PrimaryButton extends StatelessWidget {
     final Skin skin = ThemeProvider.optionsOf<Skin>(context);
     return Button(
       label,
+      radius: radius,
       primary: skin.colorScheme.primary,
       surface: skin.disabled,
       onPrimary: skin.colorScheme.onPrimary,

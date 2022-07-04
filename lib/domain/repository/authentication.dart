@@ -13,4 +13,6 @@ abstract class AuthenticationRepository {
   Future<bool> authorize(String otp);
 
   Future<Attempt> lastLogInAttempt();
+
+  Future<void> logout();
 }

@@ -4,22 +4,25 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../../domain/domain.dart';
 import '../../../exception/exception.dart';
 import '../../../util/util.dart';
-import '../../../data/database/dao/dao.dart';
 
+import '../../database/dao/dao.dart';
 import '../../database/database.dart' as db;
 
 import 'mapper.dart';
 
 class KAccountRepository extends AccountRepository {
   final Dio _dio;
+
   final SessionDao _sessionDao;
 
   KAccountRepository(this._dio, this._sessionDao);
 
   @override
   Future<void> changePassword(String newPassword, String currentPassword) {
-    // TODO: implement changePassword
-    throw UnimplementedError();
+    return _dio.post('/auth/account/change-password', data: {
+      'newPassword': newPassword,
+      'currentPassword': currentPassword,
+    });
   }
 
   @override
@@ -43,7 +46,7 @@ class KAccountRepository extends AccountRepository {
   }
 
   Future<Account> _get() {
-    return _dio.get('/account').then((result) {
+    return _dio.get('/auth/account').then((result) async {
       final response = Map<String, dynamic>.from(result.data);
       return db.Account(
         id: response['id'] as int,
@@ -75,7 +78,7 @@ class KAccountRepository extends AccountRepository {
 
   @override
   Future<void> register(AccountModel model) {
-    return _dio.post('/register', data: {
+    return _dio.post('/auth/register', data: {
       'login': model.login,
       'firstName': model.firstName,
       'lastName': model.lastName,
@@ -91,20 +94,36 @@ class KAccountRepository extends AccountRepository {
 
   @override
   Future<void> requestPasswordResetKey(String login) {
-    return _dio.post('/account/reset-password/init', data: login);
+    return _dio.post('/auth/account/reset-password/init', data: login);
   }
 
   @override
   Future<void> resetPassword(String key, String password) {
-    return _dio.post('/account/reset-password/finish', data: {
-      'key': key,
-      'newPassword': password,
+    return _sessionDao.getLastLoginAttempt().then((session) {
+      if (session == null) {
+        throw NoLoginAttemptException();
+      }
+      return _dio.post('/auth/account/reset-password/finish', data: {
+        'phone': session.value,
+        'key': key,
+        'newPassword': password,
+      });
     });
   }
 
   @override
   Future<Account> update(Account account) {
-    // TODO: implement update
-    throw UnimplementedError();
+    return _dio.post('/auth/account', data: {
+      'login': account.login,
+      'firstName': account.firstName,
+      'lastName': account.lastName,
+      'phone': account.phone,
+      'email': account.email,
+      'langKey': account.langKey,
+      'imageUrl': 'http://placehold.it/50x50',
+    }).then((_) => account);
   }
+
+  @override
+  Future<void> close() async {}
 }
